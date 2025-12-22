@@ -1,3 +1,4 @@
+// Updated Login.jsx
 import React, { useState } from 'react';
 import { login } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
@@ -21,11 +22,8 @@ const Login = () => {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
 
-      // Redirect based on role
-      if (user.role === 'ADMIN') navigate('/admin');
-      else if (user.role === 'CUSTOMER') navigate('/customer');
-      else if (user.role === 'EMPLOYEE') navigate('/employee');
-      else if (user.role === 'RIDER') navigate('/rider');
+      // Redirect to home for all roles
+      navigate('/');
       
     } catch (err) {
       setError('Invalid username or password');

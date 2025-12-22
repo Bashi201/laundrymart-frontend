@@ -1,3 +1,4 @@
+// Updated Register.jsx
 import React, { useState } from 'react';
 import { register } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
@@ -31,8 +32,12 @@ const Register = () => {
       const res = await register(formData);
       console.log('Registration success:', res.data);
 
-      setSuccess('Registration successful! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 2000);
+      // Assuming register returns { token, user } like login
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+
+      setSuccess('Registration successful! Redirecting to home...');
+      setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.response?.data || 'Registration failed. Try a different username.');

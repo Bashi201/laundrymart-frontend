@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 
 export default function Home() {
     const [showPopup, setShowPopup] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -15,96 +15,8 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950 font-sans text-slate-100">
-            {/* Navigation Bar */}
-            <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-teal-500/20">
-                <div className="container mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        {/* Logo */}
-                        <Link to="/" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                </svg>
-                            </div>
-                            <span className="text-2xl font-black bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                                LaundryMart
-                            </span>
-                        </Link>
-
-                        {/* Desktop Navigation */}
-                        <div className="hidden md:flex items-center gap-8">
-                            <Link to="/services" className="text-slate-300 hover:text-teal-400 transition-colors font-medium">
-                                Services
-                            </Link>
-                            <Link to="/pricing" className="text-slate-300 hover:text-teal-400 transition-colors font-medium">
-                                Pricing
-                            </Link>
-                            <Link to="/about" className="text-slate-300 hover:text-teal-400 transition-colors font-medium">
-                                About
-                            </Link>
-                            <Link to="/contact" className="text-slate-300 hover:text-teal-400 transition-colors font-medium">
-                                Contact
-                            </Link>
-                            <div className="flex items-center gap-3 ml-4">
-                                <Link
-                                    to="/login"
-                                    className="px-5 py-2.5 text-slate-300 hover:text-white transition-colors font-medium"
-                                >
-                                    Login
-                                </Link>
-                                <Link
-                                    to="/register"
-                                    className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold rounded-lg hover:from-teal-400 hover:to-cyan-400 transition-all shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 hover:scale-105"
-                                >
-                                    Sign Up
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* Mobile Menu Button */}
-                        <button
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="md:hidden p-2 text-slate-300 hover:text-teal-400 transition-colors"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    {/* Mobile Menu */}
-                    {mobileMenuOpen && (
-                        <div className="md:hidden mt-4 py-4 border-t border-slate-800 space-y-3">
-                            <Link to="/services" className="block text-slate-300 hover:text-teal-400 transition-colors font-medium py-2">
-                                Services
-                            </Link>
-                            <Link to="/pricing" className="block text-slate-300 hover:text-teal-400 transition-colors font-medium py-2">
-                                Pricing
-                            </Link>
-                            <Link to="/about" className="block text-slate-300 hover:text-teal-400 transition-colors font-medium py-2">
-                                About
-                            </Link>
-                            <Link to="/contact" className="block text-slate-300 hover:text-teal-400 transition-colors font-medium py-2">
-                                Contact
-                            </Link>
-                            <div className="pt-3 space-y-2 border-t border-slate-800">
-                                <Link
-                                    to="/login"
-                                    className="block w-full px-5 py-3 text-center text-slate-300 hover:text-white transition-colors font-medium border border-slate-700 rounded-lg hover:border-slate-600"
-                                >
-                                    Login
-                                </Link>
-                                <Link
-                                    to="/register"
-                                    className="block w-full px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold rounded-lg hover:from-teal-400 hover:to-cyan-400 transition-all shadow-lg shadow-teal-500/30 text-center"
-                                >
-                                    Sign Up
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </nav>
+            {/* Use unified Navbar */}
+            <Navbar />
 
             {/* Hero Section */}
             <header className="relative pt-32 pb-40 lg:pt-48 lg:pb-64 overflow-hidden">
