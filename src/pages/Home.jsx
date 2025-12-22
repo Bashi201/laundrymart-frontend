@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
 
 export default function Home() {
@@ -205,29 +206,8 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="py-12 bg-slate-950 border-t border-slate-800">
-                <div className="container mx-auto px-6 text-center">
-                    <div className="flex items-center justify-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/30">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                            </svg>
-                        </div>
-                        <span className="text-2xl font-black bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                            LaundryMart
-                        </span>
-                    </div>
-                    <p className="text-slate-400 mb-4">
-                        Fresh clothes, delivered to your door. © 2025 LaundryMart. All rights reserved.
-                    </p>
-                    <div className="flex justify-center gap-6 text-sm text-slate-500">
-                        <Link to="/privacy" className="hover:text-teal-400 transition-colors">Privacy Policy</Link>
-                        <Link to="/terms" className="hover:text-teal-400 transition-colors">Terms of Service</Link>
-                        <Link to="/contact" className="hover:text-teal-400 transition-colors">Contact Us</Link>
-                    </div>
-                </div>
-            </footer>
+            {/* Modern Footer */}
+                <Footer />
 
             {/* Welcome Popup */}
             {showPopup && (
