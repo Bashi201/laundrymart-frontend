@@ -1,7 +1,8 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Home from './pages/Home';
 import Login from './pages/Login';
-import Register from './pages/Register';  // If you created it
+import Register from './pages/Register';
 import Layout from './components/Layout';
 import AdminDashboard from './pages/AdminDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
@@ -19,9 +20,19 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/" element={<Login />} />
+        
+        {/* Placeholder routes for Home page links */}
+        <Route path="/services" element={<Home />} />
+        <Route path="/pricing" element={<Home />} />
+        <Route path="/about" element={<Home />} />
+        <Route path="/contact" element={<Home />} />
+        <Route path="/privacy" element={<Home />} />
+        <Route path="/terms" element={<Home />} />
+        <Route path="/forgot-password" element={<Login />} />
 
         {/* All protected pages use Layout (with Navbar) */}
         <Route element={<Layout />}>
@@ -41,8 +52,29 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          {/* Add employee/rider later */}
+          {/* Add employee/rider routes later */}
+          {/* 
+          <Route 
+            path="/employee" 
+            element={
+              <ProtectedRoute allowedRoles={['EMPLOYEE']}>
+                <EmployeeDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/rider" 
+            element={
+              <ProtectedRoute allowedRoles={['RIDER']}>
+                <RiderDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          */}
         </Route>
+
+        {/* Catch all - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
