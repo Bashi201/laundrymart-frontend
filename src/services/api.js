@@ -1,4 +1,4 @@
-// src/services/api.js   ← Update this file
+// src/services/api.js
 
 import axios from 'axios';
 
@@ -13,11 +13,20 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-// Fixed endpoints (match your working backend)
+// Auth endpoints
 export const register = (user) => API.post('/register', user);
 export const login = (user) => API.post('/login', user);
 
-// These will work after we create the controllers
-export const getUsers = () => API.get('/admin/users');           // Only for ADMIN
+// Admin endpoints
+export const getUsers = () => API.get('/admin/users'); // Only for ADMIN
+
+// Customer endpoints (you'll use these later)
 export const createOrder = (order) => API.post('/customer/orders', order);
 export const getMyOrders = () => API.get('/customer/orders');
+
+// New: Profile update endpoint (for any authenticated user)
+export const updateProfile = (profileData) => API.put('/profile', profileData);
+
+// Optional: Add more endpoints later like:
+// export const getProfile = () => API.get('/profile');
+// export const assignOrder = (orderId, data) => API.put(`/admin/orders/${orderId}/assign`, data);

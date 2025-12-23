@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getUsers, register } from '../services/api';
+import { getUsers, register, updateProfile } from '../services/api'; // Added updateProfile import
 import { getUser } from '../utils/auth';
 
 const AdminDashboard = () => {
-  const admin = getUser();
+  const [admin, setAdmin] = useState(getUser()); // Changed to state for re-rendering on update
   const [activeTab, setActiveTab] = useState('overview');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +24,16 @@ const AdminDashboard = () => {
     role: 'EMPLOYEE'
   });
   const [message, setMessage] = useState('');
+
+  // Added profile form state
+  const [profileForm, setProfileForm] = useState({
+    fullName: admin?.fullName || '',
+    email: admin?.email || '',
+    phone: admin?.phone || '',
+    address: admin?.address || '',
+    password: ''
+  });
+  const [profileMessage, setProfileMessage] = useState('');
 
   // Mock data - replace with actual API calls
   const [stats, setStats] = useState({
@@ -94,6 +104,8 @@ const AdminDashboard = () => {
     }
   };
 
+  
+
   const getStatusColor = (status) => {
     const colors = {
       'Pending': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
@@ -114,6 +126,46 @@ const AdminDashboard = () => {
     };
     return colors[role] || colors['CUSTOMER'];
   };
+
+  const [profileData, setProfileData] = useState({
+  email: admin?.email || '',
+  fullName: admin?.fullName || '',
+  phone: admin?.phone || '',
+  address: admin?.address || '',
+  password: '',
+});
+
+// Added handleUpdateProfile function
+  const handleUpdateProfile = async () => {
+    const updateData = {
+      fullName: profileForm.fullName.trim() || undefined,
+      email: profileForm.email.trim(),
+      phone: profileForm.phone.trim() || undefined,
+      address: profileForm.address.trim() || undefined,
+      password: profileForm.password.trim() || undefined
+    };
+
+    try {
+      const res = await updateProfile(updateData);
+      setProfileMessage(res.data.message);
+      // Update localStorage
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      // Update admin state to refresh UI
+      setAdmin(res.data.user);
+      // Reset form password and update with new values
+      setProfileForm({
+        fullName: res.data.user.fullName,
+        email: res.data.user.email,
+        phone: res.data.user.phone,
+        address: res.data.user.address,
+        password: ''
+      });
+      setTimeout(() => setProfileMessage(''), 3000);
+    } catch (err) {
+      setProfileMessage(err.response?.data || 'Failed to update profile. Try again.');
+    }
+  };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 py-8">
@@ -253,62 +305,69 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'users' && (
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-slate-700/50 p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">User Management</h2>
-              <button
-                onClick={() => setShowAddUserModal(true)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-400 hover:to-blue-500 transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add User
-              </button>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto"></div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-700/50">
-                      <th className="text-left py-4 px-4 text-slate-400 font-semibold">Username</th>
-                      <th className="text-left py-4 px-4 text-slate-400 font-semibold">Full Name</th>
-                      <th className="text-left py-4 px-4 text-slate-400 font-semibold">Email</th>
-                      <th className="text-left py-4 px-4 text-slate-400 font-semibold">Role</th>
-                      <th className="text-left py-4 px-4 text-slate-400 font-semibold">Phone</th>
-                      <th className="text-right py-4 px-4 text-slate-400 font-semibold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user) => (
-                      <tr key={user.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-all">
-                        <td className="py-4 px-4 text-white font-medium">{user.username}</td>
-                        <td className="py-4 px-4 text-slate-300">{user.fullName || '-'}</td>
-                        <td className="py-4 px-4 text-slate-300">{user.email}</td>
-                        <td className="py-4 px-4">
-                          <span className={`px-3 py-1 rounded-full border text-xs font-bold ${getRoleBadgeColor(user.role)}`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-slate-300">{user.phone || '-'}</td>
-                        <td className="py-4 px-4 text-right">
-                          <button className="px-3 py-1 text-cyan-400 hover:text-cyan-300 text-sm font-medium">
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">User Management</h2>
+            <button
+              onClick={() => setShowAddUserModal(true)}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-400 hover:to-blue-500 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 flex items-center gap-2"
+            >
+              Add New User
+            </button>
           </div>
-        )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {[
+              { title: 'Employees', value: stats.employees, color: 'blue' },
+              { title: 'Riders', value: stats.riders, color: 'purple' },
+              { title: 'Customers', value: stats.totalUsers - stats.employees - stats.riders - 1, color: 'green' },  // -1 for admin
+            ].map(stat => (
+              <div key={stat.title} className={`p-6 bg-${stat.color}-500/10 rounded-xl border border-${stat.color}-500/20`}>
+                <h3 className="text-slate-300 mb-2">{stat.title}</h3>
+                <p className="text-3xl font-bold text-white">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto bg-slate-800/50 rounded-xl border border-slate-700/50">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="px-6 py-4 text-left text-slate-400">User</th>
+                  <th className="px-6 py-4 text-left text-slate-400">Role</th>
+                  <th className="px-6 py-4 text-left text-slate-400">Email</th>
+                  <th className="px-6 py-4 text-left text-slate-400">Phone</th>
+                  <th className="px-6 py-4 text-left text-slate-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.filter(u => u.role !== 'ADMIN').map(user => (
+                  <tr key={user.id} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/50 transition-all">
+                    <td className="px-6 py-4">
+                      <div className="font-semibold text-white">{user.fullName || user.username}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        user.role === 'EMPLOYEE' ? 'bg-blue-500/10 text-blue-400' :
+                        user.role === 'RIDER' ? 'bg-purple-500/10 text-purple-400' :
+                        'bg-green-500/10 text-green-400'
+                      }`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-slate-300">{user.email}</td>
+                    <td className="px-6 py-4 text-slate-300">{user.phone || 'N/A'}</td>
+                    <td className="px-6 py-4">
+                      <button className="text-blue-400 hover:text-blue-300 mr-4">Edit</button>
+                      <button className="text-red-400 hover:text-red-300">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
         {activeTab === 'orders' && (
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-slate-700/50 p-8">
@@ -364,62 +423,86 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'profile' && (
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-purple-500/30 p-8 max-w-3xl">
-            <h2 className="text-2xl font-bold text-white mb-6">Admin Profile</h2>
-            
-            <div className="space-y-6">
-              <div className="flex items-center gap-6 p-6 bg-slate-800/30 rounded-2xl border border-slate-700/50">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-purple-500/30">
-                  {admin?.fullName?.charAt(0) || admin?.username?.charAt(0) || 'A'}
+         {activeTab === 'profile' && (
+          <div className="max-w-md">
+            <h2 className="text-xl font-bold mb-6">Admin Profile</h2>
+            <div className="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-bold">
+                  {admin?.fullName?.[0] || 'A'}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1">{admin?.fullName || admin?.username}</h3>
-                  <p className="text-slate-400 mb-2">{admin?.email}</p>
-                  <span className="px-3 py-1 rounded-full border text-xs font-bold bg-purple-500/10 text-purple-400 border-purple-500/30">
-                    ADMIN
-                  </span>
+                  <h3 className="font-bold text-lg">{admin?.fullName || 'Admin'}</h3>
+                  <p className="text-slate-400">{admin?.email}</p>
+                  <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">{admin?.role}</span>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Full Name</label>
-                <input
-                  type="text"
-                  defaultValue={admin?.fullName}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                />
-              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={profileForm.fullName}
+                    onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Email</label>
-                <input
-                  type="email"
-                  defaultValue={admin?.email}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  defaultValue={admin?.phone}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Address</label>
-                <textarea
-                  defaultValue={admin?.address}
-                  rows="3"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all resize-none"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Address</label>
+                  <input
+                    type="text"
+                    value={profileForm.address}
+                    onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  />
+                </div>
 
-              <div className="pt-4">
-                <button className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:from-purple-400 hover:to-pink-400 transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">New Password (leave blank to keep current)</label>
+                  <input
+                    type="password"
+                    value={profileForm.password}
+                    onChange={(e) => setProfileForm({ ...profileForm, password: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  />
+                </div>
+
+                {profileMessage && (
+                  <div className={`p-4 rounded-xl border ${
+                    profileMessage.includes('success') 
+                      ? 'bg-teal-500/10 border-teal-500/30 text-teal-400' 
+                      : 'bg-red-500/10 border-red-500/30 text-red-400'
+                  }`}>
+                    {profileMessage}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleUpdateProfile}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:from-purple-400 hover:to-pink-400 transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
+                >
                   Save Changes
                 </button>
               </div>
