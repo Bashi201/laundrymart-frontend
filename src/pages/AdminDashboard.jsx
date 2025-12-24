@@ -50,6 +50,19 @@ const AdminDashboard = () => {
   const [selectedRiders, setSelectedRiders] = useState({});
   const [selectedEmployees, setSelectedEmployees] = useState({});
   const [selectedStatus, setSelectedStatus] = useState({});
+  
+  // Search states
+  const [userSearch, setUserSearch] = useState('');
+  const [orderSearch, setOrderSearch] = useState('');
+  
+  // Toast notification state
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
+  };
 
   useEffect(() => {
     loadUsers();
@@ -153,51 +166,59 @@ const AdminDashboard = () => {
   const handleAssignRider = async (orderId) => {
     const riderId = selectedRiders[orderId];
     if (!riderId) {
-      alert('Please select a rider');
+      showToast('Please select a rider', 'error');
       return;
     }
     try {
       await assignRider(orderId, riderId);
-      alert('Rider assigned successfully!');
-      loadOrders();
+      showToast('Rider assigned successfully!', 'success');
+      await loadOrders(); // Wait for orders to reload
       setSelectedRiders(prev => ({ ...prev, [orderId]: '' }));
     } catch (err) {
       console.error('Failed to assign rider:', err);
-      alert('Failed to assign rider');
+      showToast('Failed to assign rider', 'error');
     }
   };
 
   const handleAssignEmployee = async (orderId) => {
     const employeeId = selectedEmployees[orderId];
     if (!employeeId) {
-      alert('Please select an employee');
+      showToast('Please select an employee', 'error');
       return;
     }
     try {
       await assignEmployee(orderId, employeeId);
-      alert('Employee assigned successfully!');
-      loadOrders();
+      showToast('Employee assigned successfully!', 'success');
+      await loadOrders(); // Wait for orders to reload
       setSelectedEmployees(prev => ({ ...prev, [orderId]: '' }));
     } catch (err) {
       console.error('Failed to assign employee:', err);
-      alert('Failed to assign employee');
+      showToast('Failed to assign employee', 'error');
     }
   };
 
   const handleUpdateStatus = async (orderId) => {
     const status = selectedStatus[orderId];
+    const currentOrder = orders.find(o => o.id === orderId);
+    
     if (!status) {
-      alert('Please select a status');
+      showToast('Please select a status', 'error');
       return;
     }
+    
+    if (status === currentOrder?.status) {
+      showToast('Please select a different status', 'error');
+      return;
+    }
+    
     try {
       await updateOrderStatus(orderId, status);
-      alert('Order status updated successfully!');
-      loadOrders();
+      showToast('Order status updated successfully!', 'success');
+      await loadOrders(); // Wait for orders to reload
       setSelectedStatus(prev => ({ ...prev, [orderId]: '' }));
     } catch (err) {
       console.error('Failed to update status:', err);
-      alert('Failed to update status');
+      showToast('Failed to update status', 'error');
     }
   };
 
@@ -235,6 +256,36 @@ const AdminDashboard = () => {
     if (typeof user === 'string') return user;
     return user.fullName || user.username || 'Unknown';
   };
+
+  // Filter functions
+  const filteredUsers = users.filter(u => {
+    if (!userSearch) return true;
+    const search = userSearch.toLowerCase();
+    return (
+      (u.fullName && u.fullName.toLowerCase().includes(search)) ||
+      (u.username && u.username.toLowerCase().includes(search)) ||
+      (u.email && u.email.toLowerCase().includes(search)) ||
+      (u.phone && u.phone.toLowerCase().includes(search)) ||
+      (u.role && u.role.toLowerCase().includes(search))
+    );
+  });
+
+  const filteredOrders = orders.filter(o => {
+    if (!orderSearch) return true;
+    const search = orderSearch.toLowerCase();
+    const customerName = getUserDisplay(o.customer).toLowerCase();
+    const employeeName = getUserDisplay(o.assignedEmployee).toLowerCase();
+    const riderName = getUserDisplay(o.assignedRider).toLowerCase();
+    
+    return (
+      o.id.toString().includes(search) ||
+      customerName.includes(search) ||
+      (o.status && o.status.toLowerCase().includes(search)) ||
+      (o.details && o.details.toLowerCase().includes(search)) ||
+      employeeName.includes(search) ||
+      riderName.includes(search)
+    );
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 py-8">
@@ -381,14 +432,37 @@ const AdminDashboard = () => {
 
         {activeTab === 'users' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
               <h2 className="text-2xl font-bold text-white">User Management</h2>
-              <button
-                onClick={() => setShowAddUserModal(true)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-400 hover:to-blue-500 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 flex items-center gap-2"
-              >
-                Add New User
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                {/* Search Bar */}
+                <div className="relative flex-1 md:w-80">
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="w-full px-4 py-3 pl-11 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  />
+                  <svg 
+                    className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-400 hover:to-blue-500 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add User
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -415,20 +489,41 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.filter(u => u.role !== 'ADMIN').map(user => (
-                    <tr key={user.id} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/50 transition-all">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-white">{user.fullName || user.username}</div>
+                  {filteredUsers.filter(u => u.role !== 'ADMIN').length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
+                            <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                          </div>
+                          <p className="text-slate-400 mb-4">No users found matching "{userSearch}"</p>
+                          <button
+                            onClick={() => setUserSearch('')}
+                            className="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg hover:text-white hover:border-slate-600 transition-all"
+                          >
+                            Clear Search
+                          </button>
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleBadgeColor(user.role)}`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-300">{user.email}</td>
-                      <td className="px-6 py-4 text-slate-300">{user.phone || 'N/A'}</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredUsers.filter(u => u.role !== 'ADMIN').map(user => (
+                      <tr key={user.id} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/50 transition-all">
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-white">{user.fullName || user.username}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleBadgeColor(user.role)}`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-300">{user.email}</td>
+                        <td className="px-6 py-4 text-slate-300">{user.phone || 'N/A'}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -437,16 +532,53 @@ const AdminDashboard = () => {
 
         {activeTab === 'orders' && (
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-slate-700/50 p-8">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
               <h2 className="text-2xl font-bold text-white">Order Management</h2>
-              <div className="text-slate-400 text-sm">Total: {orders.length} orders</div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                {/* Search Bar */}
+                <div className="relative flex-1 md:w-96">
+                  <input
+                    type="text"
+                    placeholder="Search by order ID, customer, status..."
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
+                    className="w-full px-4 py-3 pl-11 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all"
+                  />
+                  <svg 
+                    className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <div className="text-slate-400 text-sm whitespace-nowrap self-center">
+                  {filteredOrders.length} of {orders.length} orders
+                </div>
+              </div>
             </div>
 
             {orders.length === 0 ? (
               <div className="text-center py-12 text-slate-400">No orders to display</div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <p className="text-slate-400">No orders found matching "{orderSearch}"</p>
+                <button
+                  onClick={() => setOrderSearch('')}
+                  className="mt-4 px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg hover:text-white hover:border-slate-600 transition-all"
+                >
+                  Clear Search
+                </button>
+              </div>
             ) : (
               <div className="space-y-4">
-                {orders.map((order) => {
+                {filteredOrders.map((order) => {
                   const riders = users.filter(u => u.role === 'RIDER');
                   const employees = users.filter(u => u.role === 'EMPLOYEE');
                   
@@ -490,14 +622,16 @@ const AdminDashboard = () => {
                         <div className="space-y-4">
                           {/* Update Status */}
                           <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-2">Update Order Status</label>
+                            <label className="block text-sm font-semibold text-slate-300 mb-2">
+                              Update Order Status 
+                              <span className="ml-2 text-xs text-slate-500">(Current: {order.status})</span>
+                            </label>
                             <div className="flex gap-2">
                               <select
-                                value={selectedStatus[order.id] || ''}
+                                value={selectedStatus[order.id] || order.status}
                                 onChange={(e) => setSelectedStatus({ ...selectedStatus, [order.id]: e.target.value })}
                                 className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
                               >
-                                <option value="">Select Status</option>
                                 <option value="PENDING">Pending</option>
                                 <option value="PROCESSING">Processing</option>
                                 <option value="IN_TRANSIT">In Transit</option>
@@ -507,7 +641,8 @@ const AdminDashboard = () => {
                               </select>
                               <button
                                 onClick={() => handleUpdateStatus(order.id)}
-                                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all text-sm font-medium"
+                                disabled={!selectedStatus[order.id] || selectedStatus[order.id] === order.status}
+                                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Update
                               </button>
@@ -516,14 +651,23 @@ const AdminDashboard = () => {
 
                           {/* Assign Employee */}
                           <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-2">Assign Employee</label>
+                            <label className="block text-sm font-semibold text-slate-300 mb-2">
+                              Assign Employee
+                              {order.assignedEmployee && (
+                                <span className="ml-2 text-xs text-slate-500">
+                                  (Current: {getUserDisplay(order.assignedEmployee)})
+                                </span>
+                              )}
+                            </label>
                             <div className="flex gap-2">
                               <select
                                 value={selectedEmployees[order.id] || ''}
                                 onChange={(e) => setSelectedEmployees({ ...selectedEmployees, [order.id]: e.target.value })}
                                 className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
                               >
-                                <option value="">Select Employee</option>
+                                <option value="">
+                                  {order.assignedEmployee ? 'Change Employee' : 'Select Employee'}
+                                </option>
                                 {employees.map(emp => (
                                   <option key={emp.id} value={emp.id}>
                                     {emp.fullName || emp.username}
@@ -532,7 +676,8 @@ const AdminDashboard = () => {
                               </select>
                               <button
                                 onClick={() => handleAssignEmployee(order.id)}
-                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all text-sm font-medium"
+                                disabled={!selectedEmployees[order.id]}
+                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Assign
                               </button>
@@ -541,14 +686,23 @@ const AdminDashboard = () => {
 
                           {/* Assign Rider */}
                           <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-2">Assign Rider</label>
+                            <label className="block text-sm font-semibold text-slate-300 mb-2">
+                              Assign Rider
+                              {order.assignedRider && (
+                                <span className="ml-2 text-xs text-slate-500">
+                                  (Current: {getUserDisplay(order.assignedRider)})
+                                </span>
+                              )}
+                            </label>
                             <div className="flex gap-2">
                               <select
                                 value={selectedRiders[order.id] || ''}
                                 onChange={(e) => setSelectedRiders({ ...selectedRiders, [order.id]: e.target.value })}
                                 className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm"
                               >
-                                <option value="">Select Rider</option>
+                                <option value="">
+                                  {order.assignedRider ? 'Change Rider' : 'Select Rider'}
+                                </option>
                                 {riders.map(rider => (
                                   <option key={rider.id} value={rider.id}>
                                     {rider.fullName || rider.username}
@@ -557,7 +711,8 @@ const AdminDashboard = () => {
                               </select>
                               <button
                                 onClick={() => handleAssignRider(order.id)}
-                                className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-all text-sm font-medium"
+                                disabled={!selectedRiders[order.id]}
+                                className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Assign
                               </button>
@@ -801,6 +956,33 @@ const AdminDashboard = () => {
                   Add User
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-5 duration-300">
+          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
+            toast.type === 'success' 
+              ? 'bg-teal-500/10 border-teal-500/50 text-teal-400' 
+              : toast.type === 'error'
+              ? 'bg-red-500/10 border-red-500/50 text-red-400'
+              : 'bg-blue-500/10 border-blue-500/50 text-blue-400'
+          } backdrop-blur-xl`}>
+            <div className="flex items-center gap-3">
+              {toast.type === 'success' && (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              {toast.type === 'error' && (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              <span className="font-semibold">{toast.message}</span>
             </div>
           </div>
         </div>
