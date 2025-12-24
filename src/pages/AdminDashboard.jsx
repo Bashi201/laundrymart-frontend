@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getUsers, register, updateProfile } from '../services/api'; // Added updateProfile import
+import { getUsers, register, updateProfile, getAdminOrders, assignRider, assignEmployee, updateOrderStatus } from '../services/api';
 import { getUser } from '../utils/auth';
 
 const AdminDashboard = () => {
-  const [admin, setAdmin] = useState(getUser()); // Changed to state for re-rendering on update
+  const [admin, setAdmin] = useState(getUser());
   const [activeTab, setActiveTab] = useState('overview');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +11,6 @@ const AdminDashboard = () => {
   // Modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showOrderDetailsModal, setShowOrderDetailsModal] = useState(false);
   
   // Form states
   const [newUser, setNewUser] = useState({
@@ -25,7 +24,7 @@ const AdminDashboard = () => {
   });
   const [message, setMessage] = useState('');
 
-  // Added profile form state
+  // Profile form state
   const [profileForm, setProfileForm] = useState({
     fullName: admin?.fullName || '',
     email: admin?.email || '',
@@ -35,24 +34,26 @@ const AdminDashboard = () => {
   });
   const [profileMessage, setProfileMessage] = useState('');
 
-  // Mock data - replace with actual API calls
+  // Stats
   const [stats, setStats] = useState({
     totalUsers: 0,
-    totalOrders: 24,
-    activeOrders: 12,
-    revenue: 5420,
+    totalOrders: 0,
+    activeOrders: 0,
+    revenue: 0,
     employees: 0,
     riders: 0
   });
 
-  const [orders, setOrders] = useState([
-    { id: 1, customer: 'John Doe', status: 'Processing', items: '5 shirts, 2 pants', amount: 250, date: '2025-01-20' },
-    { id: 2, customer: 'Jane Smith', status: 'In Transit', items: '3 towels', amount: 150, date: '2025-01-20' },
-    { id: 3, customer: 'Bob Johnson', status: 'Pending', items: '2 jackets', amount: 400, date: '2025-01-19' },
-  ]);
+  const [orders, setOrders] = useState([]);
+  
+  // Assignment states
+  const [selectedRiders, setSelectedRiders] = useState({});
+  const [selectedEmployees, setSelectedEmployees] = useState({});
+  const [selectedStatus, setSelectedStatus] = useState({});
 
   useEffect(() => {
     loadUsers();
+    loadOrders();
   }, []);
 
   const loadUsers = async () => {
@@ -60,7 +61,6 @@ const AdminDashboard = () => {
       const res = await getUsers();
       setUsers(res.data);
       
-      // Update stats
       const employees = res.data.filter(u => u.role === 'EMPLOYEE').length;
       const riders = res.data.filter(u => u.role === 'RIDER').length;
       setStats(prev => ({
@@ -73,6 +73,25 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('Failed to load users:', err);
       setLoading(false);
+    }
+  };
+
+  const loadOrders = async () => {
+    try {
+      const res = await getAdminOrders();
+      setOrders(res.data);
+      
+      // Calculate revenue from actual orders
+      const totalRevenue = res.data.reduce((sum, order) => sum + (order.amount || 0), 0);
+      
+      setStats(prev => ({
+        ...prev,
+        totalOrders: res.data.length,
+        activeOrders: res.data.filter(o => o.status !== 'COMPLETED' && o.status !== 'DELIVERED').length,
+        revenue: totalRevenue
+      }));
+    } catch (err) {
+      console.error('Failed to load orders:', err);
     }
   };
 
@@ -104,14 +123,97 @@ const AdminDashboard = () => {
     }
   };
 
-  
+  const handleUpdateProfile = async () => {
+    const updateData = {
+      fullName: profileForm.fullName.trim() || undefined,
+      email: profileForm.email.trim(),
+      phone: profileForm.phone.trim() || undefined,
+      address: profileForm.address.trim() || undefined,
+      password: profileForm.password.trim() || undefined
+    };
+
+    try {
+      const res = await updateProfile(updateData);
+      setProfileMessage(res.data.message);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      setAdmin(res.data.user);
+      setProfileForm({
+        fullName: res.data.user.fullName,
+        email: res.data.user.email,
+        phone: res.data.user.phone,
+        address: res.data.user.address,
+        password: ''
+      });
+      setTimeout(() => setProfileMessage(''), 3000);
+    } catch (err) {
+      setProfileMessage(err.response?.data || 'Failed to update profile. Try again.');
+    }
+  };
+
+  const handleAssignRider = async (orderId) => {
+    const riderId = selectedRiders[orderId];
+    if (!riderId) {
+      alert('Please select a rider');
+      return;
+    }
+    try {
+      await assignRider(orderId, riderId);
+      alert('Rider assigned successfully!');
+      loadOrders();
+      setSelectedRiders(prev => ({ ...prev, [orderId]: '' }));
+    } catch (err) {
+      console.error('Failed to assign rider:', err);
+      alert('Failed to assign rider');
+    }
+  };
+
+  const handleAssignEmployee = async (orderId) => {
+    const employeeId = selectedEmployees[orderId];
+    if (!employeeId) {
+      alert('Please select an employee');
+      return;
+    }
+    try {
+      await assignEmployee(orderId, employeeId);
+      alert('Employee assigned successfully!');
+      loadOrders();
+      setSelectedEmployees(prev => ({ ...prev, [orderId]: '' }));
+    } catch (err) {
+      console.error('Failed to assign employee:', err);
+      alert('Failed to assign employee');
+    }
+  };
+
+  const handleUpdateStatus = async (orderId) => {
+    const status = selectedStatus[orderId];
+    if (!status) {
+      alert('Please select a status');
+      return;
+    }
+    try {
+      await updateOrderStatus(orderId, status);
+      alert('Order status updated successfully!');
+      loadOrders();
+      setSelectedStatus(prev => ({ ...prev, [orderId]: '' }));
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      alert('Failed to update status');
+    }
+  };
 
   const getStatusColor = (status) => {
     const colors = {
+      'PENDING': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
       'Pending': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+      'PROCESSING': 'bg-blue-500/10 text-blue-400 border-blue-500/30',
       'Processing': 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+      'IN_TRANSIT': 'bg-purple-500/10 text-purple-400 border-purple-500/30',
       'In Transit': 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+      'DELIVERED': 'bg-teal-500/10 text-teal-400 border-teal-500/30',
       'Delivered': 'bg-teal-500/10 text-teal-400 border-teal-500/30',
+      'COMPLETED': 'bg-green-500/10 text-green-400 border-green-500/30',
+      'Completed': 'bg-green-500/10 text-green-400 border-green-500/30',
+      'CANCELLED': 'bg-red-500/10 text-red-400 border-red-500/30',
       'Cancelled': 'bg-red-500/10 text-red-400 border-red-500/30',
     };
     return colors[status] || colors['Pending'];
@@ -127,45 +229,12 @@ const AdminDashboard = () => {
     return colors[role] || colors['CUSTOMER'];
   };
 
-  const [profileData, setProfileData] = useState({
-  email: admin?.email || '',
-  fullName: admin?.fullName || '',
-  phone: admin?.phone || '',
-  address: admin?.address || '',
-  password: '',
-});
-
-// Added handleUpdateProfile function
-  const handleUpdateProfile = async () => {
-    const updateData = {
-      fullName: profileForm.fullName.trim() || undefined,
-      email: profileForm.email.trim(),
-      phone: profileForm.phone.trim() || undefined,
-      address: profileForm.address.trim() || undefined,
-      password: profileForm.password.trim() || undefined
-    };
-
-    try {
-      const res = await updateProfile(updateData);
-      setProfileMessage(res.data.message);
-      // Update localStorage
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      // Update admin state to refresh UI
-      setAdmin(res.data.user);
-      // Reset form password and update with new values
-      setProfileForm({
-        fullName: res.data.user.fullName,
-        email: res.data.user.email,
-        phone: res.data.user.phone,
-        address: res.data.user.address,
-        password: ''
-      });
-      setTimeout(() => setProfileMessage(''), 3000);
-    } catch (err) {
-      setProfileMessage(err.response?.data || 'Failed to update profile. Try again.');
-    }
+  // Helper to safely get user display name
+  const getUserDisplay = (user) => {
+    if (!user) return 'N/A';
+    if (typeof user === 'string') return user;
+    return user.fullName || user.username || 'Unknown';
   };
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 py-8">
@@ -277,164 +346,247 @@ const AdminDashboard = () => {
             {/* Recent Orders */}
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-slate-700/50 p-8">
               <h2 className="text-2xl font-bold text-white mb-6">Recent Orders</h2>
-              <div className="space-y-3">
-                {orders.slice(0, 5).map((order) => (
-                  <div
-                    key={order.id}
-                    className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4 hover:bg-slate-800/50 transition-all flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-white font-bold">#{order.id}</span>
-                        <span className="text-slate-400 text-sm">{order.customer}</span>
-                        <div className={`px-2 py-1 rounded-full border text-xs font-bold ${getStatusColor(order.status)}`}>
-                          {order.status}
+              {orders.length === 0 ? (
+                <div className="text-center py-8 text-slate-400">No orders yet</div>
+              ) : (
+                <div className="space-y-3">
+                  {orders.slice(0, 5).map((order) => (
+                    <div
+                      key={order.id}
+                      className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4 hover:bg-slate-800/50 transition-all flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-white font-bold">#{order.id}</span>
+                          <span className="text-slate-400 text-sm">{getUserDisplay(order.customer)}</span>
+                          <div className={`px-2 py-1 rounded-full border text-xs font-bold ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </div>
+                        </div>
+                        <p className="text-slate-400 text-sm">{order.details || order.items || 'Order details'}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-teal-400 font-bold">${order.amount || 0}</div>
+                        <div className="text-slate-500 text-xs">
+                          {order.date || new Date(order.createdAt).toLocaleDateString()}
                         </div>
                       </div>
-                      <p className="text-slate-400 text-sm">{order.items}</p>
                     </div>
-                    <div className="text-right">
-                      <div className="text-teal-400 font-bold">${order.amount}</div>
-                      <div className="text-slate-500 text-xs">{order.date}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {activeTab === 'users' && (
-        <div>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">User Management</h2>
-            <button
-              onClick={() => setShowAddUserModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-400 hover:to-blue-500 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 flex items-center gap-2"
-            >
-              Add New User
-            </button>
-          </div>
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">User Management</h2>
+              <button
+                onClick={() => setShowAddUserModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-400 hover:to-blue-500 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 flex items-center gap-2"
+              >
+                Add New User
+              </button>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {[
-              { title: 'Employees', value: stats.employees, color: 'blue' },
-              { title: 'Riders', value: stats.riders, color: 'purple' },
-              { title: 'Customers', value: stats.totalUsers - stats.employees - stats.riders - 1, color: 'green' },  // -1 for admin
-            ].map(stat => (
-              <div key={stat.title} className={`p-6 bg-${stat.color}-500/10 rounded-xl border border-${stat.color}-500/20`}>
-                <h3 className="text-slate-300 mb-2">{stat.title}</h3>
-                <p className="text-3xl font-bold text-white">{stat.value}</p>
-              </div>
-            ))}
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {[
+                { title: 'Employees', value: stats.employees, color: 'blue' },
+                { title: 'Riders', value: stats.riders, color: 'purple' },
+                { title: 'Customers', value: stats.totalUsers - stats.employees - stats.riders - 1, color: 'green' },
+              ].map(stat => (
+                <div key={stat.title} className={`p-6 bg-${stat.color}-500/10 rounded-xl border border-${stat.color}-500/20`}>
+                  <h3 className="text-slate-300 mb-2">{stat.title}</h3>
+                  <p className="text-3xl font-bold text-white">{stat.value}</p>
+                </div>
+              ))}
+            </div>
 
-          <div className="overflow-x-auto bg-slate-800/50 rounded-xl border border-slate-700/50">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-700/50">
-                  <th className="px-6 py-4 text-left text-slate-400">User</th>
-                  <th className="px-6 py-4 text-left text-slate-400">Role</th>
-                  <th className="px-6 py-4 text-left text-slate-400">Email</th>
-                  <th className="px-6 py-4 text-left text-slate-400">Phone</th>
-                  <th className="px-6 py-4 text-left text-slate-400">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.filter(u => u.role !== 'ADMIN').map(user => (
-                  <tr key={user.id} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/50 transition-all">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-white">{user.fullName || user.username}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        user.role === 'EMPLOYEE' ? 'bg-blue-500/10 text-blue-400' :
-                        user.role === 'RIDER' ? 'bg-purple-500/10 text-purple-400' :
-                        'bg-green-500/10 text-green-400'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-300">{user.email}</td>
-                    <td className="px-6 py-4 text-slate-300">{user.phone || 'N/A'}</td>
-                    <td className="px-6 py-4">
-                      <button className="text-blue-400 hover:text-blue-300 mr-4">Edit</button>
-                      <button className="text-red-400 hover:text-red-300">Delete</button>
-                    </td>
+            <div className="overflow-x-auto bg-slate-800/50 rounded-xl border border-slate-700/50">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-700/50">
+                    <th className="px-6 py-4 text-left text-slate-400">User</th>
+                    <th className="px-6 py-4 text-left text-slate-400">Role</th>
+                    <th className="px-6 py-4 text-left text-slate-400">Email</th>
+                    <th className="px-6 py-4 text-left text-slate-400">Phone</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.filter(u => u.role !== 'ADMIN').map(user => (
+                    <tr key={user.id} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/50 transition-all">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-white">{user.fullName || user.username}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleBadgeColor(user.role)}`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-300">{user.email}</td>
+                      <td className="px-6 py-4 text-slate-300">{user.phone || 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
         {activeTab === 'orders' && (
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-slate-700/50 p-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Order Management</h2>
-              <div className="flex gap-2">
-                <button className="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg hover:text-teal-400 hover:border-teal-500/50 transition-all text-sm font-medium">
-                  Filter
-                </button>
-                <button className="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg hover:text-teal-400 hover:border-teal-500/50 transition-all text-sm font-medium">
-                  Export
-                </button>
-              </div>
+              <div className="text-slate-400 text-sm">Total: {orders.length} orders</div>
             </div>
 
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-slate-800/30 rounded-2xl border border-slate-700/50 p-6 hover:bg-slate-800/50 transition-all"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-slate-500 text-sm font-medium">Order #{order.id}</span>
-                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold ${getStatusColor(order.status)}`}>
-                          {order.status}
+            {orders.length === 0 ? (
+              <div className="text-center py-12 text-slate-400">No orders to display</div>
+            ) : (
+              <div className="space-y-4">
+                {orders.map((order) => {
+                  const riders = users.filter(u => u.role === 'RIDER');
+                  const employees = users.filter(u => u.role === 'EMPLOYEE');
+                  
+                  return (
+                    <div
+                      key={order.id}
+                      className="bg-slate-800/30 rounded-2xl border border-slate-700/50 p-6 hover:bg-slate-800/50 transition-all"
+                    >
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        {/* Left side - Order Info */}
+                        <div>
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="text-slate-500 text-sm font-medium">Order #{order.id}</span>
+                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold ${getStatusColor(order.status)}`}>
+                              {order.status}
+                            </div>
+                          </div>
+                          <p className="text-white font-bold mb-2">Customer: {getUserDisplay(order.customer)}</p>
+                          <p className="text-slate-400 text-sm mb-2">Details: {order.details || order.items || 'No details'}</p>
+                          <div className="flex gap-4 text-sm text-slate-500 mb-3">
+                            <span>Date: {order.date || new Date(order.createdAt).toLocaleDateString()}</span>
+                            <span>Amount: ${order.amount || 0}</span>
+                          </div>
+                          
+                          {/* Show current assignments */}
+                          <div className="space-y-2 mt-4">
+                            {order.assignedEmployee && (
+                              <div className="text-sm text-slate-400">
+                                <span className="text-blue-400">Employee:</span> {getUserDisplay(order.assignedEmployee)}
+                              </div>
+                            )}
+                            {order.assignedRider && (
+                              <div className="text-sm text-slate-400">
+                                <span className="text-cyan-400">Rider:</span> {getUserDisplay(order.assignedRider)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right side - Assignment Controls */}
+                        <div className="space-y-4">
+                          {/* Update Status */}
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-2">Update Order Status</label>
+                            <div className="flex gap-2">
+                              <select
+                                value={selectedStatus[order.id] || ''}
+                                onChange={(e) => setSelectedStatus({ ...selectedStatus, [order.id]: e.target.value })}
+                                className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
+                              >
+                                <option value="">Select Status</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="PROCESSING">Processing</option>
+                                <option value="IN_TRANSIT">In Transit</option>
+                                <option value="DELIVERED">Delivered</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="CANCELLED">Cancelled</option>
+                              </select>
+                              <button
+                                onClick={() => handleUpdateStatus(order.id)}
+                                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all text-sm font-medium"
+                              >
+                                Update
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Assign Employee */}
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-2">Assign Employee</label>
+                            <div className="flex gap-2">
+                              <select
+                                value={selectedEmployees[order.id] || ''}
+                                onChange={(e) => setSelectedEmployees({ ...selectedEmployees, [order.id]: e.target.value })}
+                                className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                              >
+                                <option value="">Select Employee</option>
+                                {employees.map(emp => (
+                                  <option key={emp.id} value={emp.id}>
+                                    {emp.fullName || emp.username}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => handleAssignEmployee(order.id)}
+                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all text-sm font-medium"
+                              >
+                                Assign
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Assign Rider */}
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-2">Assign Rider</label>
+                            <div className="flex gap-2">
+                              <select
+                                value={selectedRiders[order.id] || ''}
+                                onChange={(e) => setSelectedRiders({ ...selectedRiders, [order.id]: e.target.value })}
+                                className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm"
+                              >
+                                <option value="">Select Rider</option>
+                                {riders.map(rider => (
+                                  <option key={rider.id} value={rider.id}>
+                                    {rider.fullName || rider.username}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => handleAssignRider(order.id)}
+                                className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-all text-sm font-medium"
+                              >
+                                Assign
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <p className="text-white font-bold mb-2">{order.customer}</p>
-                      <p className="text-slate-400 text-sm mb-2">{order.items}</p>
-                      <div className="flex gap-4 text-sm text-slate-500">
-                        <span>Date: {order.date}</span>
-                        <span>Amount: ${order.amount}</span>
-                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <select className="px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-sm">
-                        <option>Pending</option>
-                        <option>Processing</option>
-                        <option>In Transit</option>
-                        <option>Delivered</option>
-                        <option>Cancelled</option>
-                      </select>
-                      <button className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all text-sm font-medium">
-                        Update
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
-         {activeTab === 'profile' && (
-          <div className="max-w-md">
-            <h2 className="text-xl font-bold mb-6">Admin Profile</h2>
-            <div className="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50">
+        {activeTab === 'profile' && (
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold text-white mb-6">Admin Profile</h2>
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-slate-700/50 p-8">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-bold">
-                  {admin?.fullName?.[0] || 'A'}
+                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-3xl font-bold">
+                  {admin?.fullName?.[0]?.toUpperCase() || admin?.username?.[0]?.toUpperCase() || 'A'}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">{admin?.fullName || 'Admin'}</h3>
+                  <h3 className="font-bold text-xl text-white">{admin?.fullName || admin?.username || 'Admin'}</h3>
                   <p className="text-slate-400">{admin?.email}</p>
-                  <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">{admin?.role}</span>
+                  <span className="inline-block mt-1 px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm border border-purple-500/30">
+                    {admin?.role}
+                  </span>
                 </div>
               </div>
 
@@ -445,7 +597,7 @@ const AdminDashboard = () => {
                     type="text"
                     value={profileForm.fullName}
                     onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                   />
                 </div>
 
@@ -455,7 +607,7 @@ const AdminDashboard = () => {
                     type="email"
                     value={profileForm.email}
                     onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                   />
                 </div>
 
@@ -465,7 +617,7 @@ const AdminDashboard = () => {
                     type="tel"
                     value={profileForm.phone}
                     onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                   />
                 </div>
 
@@ -475,7 +627,7 @@ const AdminDashboard = () => {
                     type="text"
                     value={profileForm.address}
                     onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                   />
                 </div>
 
@@ -485,7 +637,7 @@ const AdminDashboard = () => {
                     type="password"
                     value={profileForm.password}
                     onChange={(e) => setProfileForm({ ...profileForm, password: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                   />
                 </div>
 
@@ -514,7 +666,7 @@ const AdminDashboard = () => {
       {/* Add User Modal */}
       {showAddUserModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-blue-500/30 max-w-2xl w-full p-8 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-blue-500/30 max-w-2xl w-full p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-bold text-white">Add New User</h2>
               <button

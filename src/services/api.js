@@ -18,15 +18,15 @@ export const register = (user) => API.post('/register', user);
 export const login = (user) => API.post('/login', user);
 
 // Admin endpoints
-export const getUsers = () => API.get('/admin/users'); // Only for ADMIN
+export const getUsers = () => API.get('/admin/users');
+export const getAdminOrders = () => API.get('/admin/orders');
+export const assignRider = (orderId, riderId) => API.put(`/admin/orders/${orderId}/assign-rider`, { riderId });
+export const assignEmployee = (orderId, employeeId) => API.put(`/admin/orders/${orderId}/assign-employee`, { employeeId });
+export const updateOrderStatus = (orderId, status) => API.put(`/admin/orders/${orderId}/status`, { status });
 
-// Customer endpoints (you'll use these later)
+// Customer endpoints
 export const createOrder = (order) => API.post('/customer/orders', order);
 export const getMyOrders = () => API.get('/customer/orders');
 
-// New: Profile update endpoint (for any authenticated user)
+// Profile update endpoint
 export const updateProfile = (profileData) => API.put('/profile', profileData);
-
-// Optional: Add more endpoints later like:
-// export const getProfile = () => API.get('/profile');
-// export const assignOrder = (orderId, data) => API.put(`/admin/orders/${orderId}/assign`, data);

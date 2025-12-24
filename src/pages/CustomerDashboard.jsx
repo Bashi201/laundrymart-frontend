@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { createOrder, updateProfile } from '../services/api'; // Added updateProfile import
+import { createOrder, updateProfile, getMyOrders } from '../services/api'; // Added missing import
 import { getUser } from '../utils/auth';
 
 const CustomerDashboard = () => {
   const [user, setUser] = useState(getUser()); // Changed to state for re-rendering on update
-  const [orders, setOrders] = useState([
-    // Mock orders - replace with API call
-    { id: 1, status: 'Processing', items: '5 shirts, 2 pants', date: '2025-01-20', estimatedDelivery: '2025-01-22' },
-    { id: 2, status: 'In Transit', items: '3 towels, 1 bedsheet', date: '2025-01-19', estimatedDelivery: '2025-01-21' },
-    { id: 3, status: 'Delivered', items: '2 jackets', date: '2025-01-15', estimatedDelivery: '2025-01-17' },
-  ]);
+  const [orders, setOrders] = useState([]); // Updated: real orders from backend
   
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -27,6 +22,20 @@ const CustomerDashboard = () => {
 
   const [profileMessage, setProfileMessage] = useState('');
 
+  useEffect(() => {
+    loadOrders(); // Added: fetch real orders on load
+  }, []);
+
+  // Added: function to load orders
+  const loadOrders = async () => {
+    try {
+      const res = await getMyOrders();
+      setOrders(res.data);
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!orderDetails.trim()) {
       setMessage('Please enter order details');
@@ -38,11 +47,12 @@ const CustomerDashboard = () => {
       setMessage('Order placed successfully!');
       setOrderDetails('');
       setShowNewOrderModal(false);
-      // Refresh orders list here
+      loadOrders(); // Added: refresh orders after placing new one
     } catch (err) {
       setMessage('Failed to place order. Try again.');
     }
   };
+
   // Added handleUpdateProfile function
   const handleUpdateProfile = async () => {
     const updateData = {
@@ -153,19 +163,16 @@ const CustomerDashboard = () => {
           <div className="group relative bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-3xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/10">
             <div className="absolute top-6 right-6 w-16 h-16 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
             <div className="pr-20">
               <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">
-                Active Orders
+                Track Orders
               </h3>
-              <p className="text-slate-400 text-sm leading-relaxed mb-3">
-                Track your current laundry orders
+              <p className="text-slate-400 text-sm leading-relaxed">
+                View real-time status of all your active orders
               </p>
-              <div className="text-3xl font-black text-cyan-400">
-                {orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').length}
-              </div>
             </div>
           </div>
 
@@ -181,70 +188,48 @@ const CustomerDashboard = () => {
             </div>
             <div className="pr-20">
               <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
-                Edit Profile
+                Profile Settings
               </h3>
               <p className="text-slate-400 text-sm leading-relaxed">
-                Update your account information and preferences
+                Update your personal information and preferences
               </p>
             </div>
           </button>
         </div>
 
-        {/* Order History Section */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-slate-700/50 p-8">
+        {/* Orders Section */}
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-3xl border border-slate-700/50 shadow-2xl">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Order History</h2>
-            <div className="flex items-center gap-2">
-              <button className="px-4 py-2 bg-slate-800/50 border border-slate-700/50 text-slate-300 rounded-lg hover:text-teal-400 hover:border-teal-500/50 transition-all text-sm font-medium">
-                Filter
-              </button>
-            </div>
+            <h2 className="text-2xl font-black text-white">Your Orders</h2>
+            <span className="px-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-xl text-slate-300 font-semibold">
+              {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
+            </span>
           </div>
 
-          {/* Orders List */}
           <div className="space-y-4">
             {orders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-slate-800/30 rounded-2xl border border-slate-700/50 p-6 hover:bg-slate-800/50 hover:border-slate-600/50 transition-all group"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-slate-500 text-sm font-medium">Order #{order.id}</span>
-                      <div className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold ${getStatusColor(order.status)}`}>
-                        {getStatusIcon(order.status)}
-                        {order.status}
-                      </div>
+              <div key={order.id} className="p-6 bg-slate-800/30 rounded-2xl border border-slate-700/30 hover:border-slate-600/50 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/30">
+                      {getStatusIcon(order.status)}
                     </div>
-                    <p className="text-white font-bold mb-2">{order.items}</p>
-                    <div className="flex flex-wrap gap-4 text-sm text-slate-400">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Placed: {order.date}
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-xl font-black text-white">Order #{order.id}</span>
+                        <span className={`px-3 py-1 rounded-lg text-sm font-semibold border ${getStatusColor(order.status)}`}>
+                          {order.status}
+                        </span>
                       </div>
-                      {order.status !== 'Delivered' && (
-                        <div className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Delivery: {order.estimatedDelivery}
-                        </div>
+                      <p className="text-slate-400 text-sm mb-1">Placed on: {new Date(order.createdAt).toLocaleDateString()}</p>
+                      {order.assignedTo && (
+                        <p className="text-slate-400 text-sm">Assigned to: <span className="text-teal-400 font-semibold">{order.assignedTo}</span></p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg hover:text-teal-400 hover:border-teal-500/50 transition-all text-sm font-medium">
-                      View Details
-                    </button>
-                    {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
-                      <button className="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg hover:text-cyan-400 hover:border-cyan-500/50 transition-all text-sm font-medium">
-                        Track
-                      </button>
-                    )}
-                  </div>
+                </div>
+                <div className="pt-4 border-t border-slate-700/30">
+                  <p className="text-slate-300"><span className="text-slate-400">Details:</span> {order.details}</p>
                 </div>
               </div>
             ))}
@@ -270,63 +255,54 @@ const CustomerDashboard = () => {
       </div>
 
       {/* New Order Modal */}
-      {showNewOrderModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-teal-500/30 max-w-2xl w-full p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold text-white">Place New Order</h2>
-              <button
-                onClick={() => setShowNewOrderModal(false)}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Order Details
-                </label>
-                <textarea
-                  value={orderDetails}
-                  onChange={(e) => setOrderDetails(e.target.value)}
-                  placeholder="e.g., 5 shirts, 2 pants, 1 bedsheet..."
-                  rows="6"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all resize-none"
-                />
-              </div>
-
-              {message && (
-                <div className={`p-4 rounded-xl border ${
-                  message.includes('success') 
-                    ? 'bg-teal-500/10 border-teal-500/30 text-teal-400' 
-                    : 'bg-red-500/10 border-red-500/30 text-red-400'
-                }`}>
-                  {message}
+        {showNewOrderModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-slate-700/50">
+              <h2 className="text-xl font-bold mb-6 text-white">Place New Order</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Order Details</label>
+                  <textarea
+                    value={orderDetails}
+                    onChange={(e) => setOrderDetails(e.target.value)}
+                    rows="4"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all resize-none"
+                    placeholder="e.g., 5 shirts, 2 pants, 3 towels - Wash & Fold"
+                  />
                 </div>
-              )}
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowNewOrderModal(false)}
-                  className="flex-1 px-6 py-3 bg-slate-800 border border-slate-700 text-white font-bold rounded-xl hover:bg-slate-700 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePlaceOrder}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold rounded-xl hover:from-teal-400 hover:to-cyan-400 transition-all shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50"
-                >
-                  Place Order
-                </button>
+                {message && (
+                  <div className={`p-4 rounded-xl border ${
+                    message.includes('success') 
+                      ? 'bg-teal-500/10 border-teal-500/30 text-teal-400' 
+                      : 'bg-red-500/10 border-red-500/30 text-red-400'
+                  }`}>
+                    {message}
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowNewOrderModal(false);
+                      setMessage('');
+                    }}
+                    className="flex-1 px-6 py-3 bg-slate-800 border border-slate-700 text-white font-bold rounded-xl hover:bg-slate-700 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePlaceOrder}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-400 hover:to-blue-500 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
+                  >
+                    Place Order
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Profile Modal Placeholder */}
       {showProfileModal && (
