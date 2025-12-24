@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { createOrder } from '../services/api';
+import { createOrder, updateProfile } from '../services/api'; // Added updateProfile import
 import { getUser } from '../utils/auth';
 
 const CustomerDashboard = () => {
-  const user = getUser();
+  const [user, setUser] = useState(getUser()); // Changed to state for re-rendering on update
   const [orders, setOrders] = useState([
     // Mock orders - replace with API call
     { id: 1, status: 'Processing', items: '5 shirts, 2 pants', date: '2025-01-20', estimatedDelivery: '2025-01-22' },
@@ -15,6 +15,17 @@ const CustomerDashboard = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [orderDetails, setOrderDetails] = useState('');
   const [message, setMessage] = useState('');
+
+  // Added profile form state
+  const [profileForm, setProfileForm] = useState({
+    fullName: user?.fullName || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    password: ''
+  });
+
+  const [profileMessage, setProfileMessage] = useState('');
 
   const handlePlaceOrder = async () => {
     if (!orderDetails.trim()) {
@@ -30,6 +41,36 @@ const CustomerDashboard = () => {
       // Refresh orders list here
     } catch (err) {
       setMessage('Failed to place order. Try again.');
+    }
+  };
+  // Added handleUpdateProfile function
+  const handleUpdateProfile = async () => {
+    const updateData = {
+      fullName: profileForm.fullName.trim() || undefined,
+      email: profileForm.email.trim(),
+      phone: profileForm.phone.trim() || undefined,
+      address: profileForm.address.trim() || undefined,
+      password: profileForm.password.trim() || undefined
+    };
+
+    try {
+      const res = await updateProfile(updateData);
+      setProfileMessage(res.data.message);
+      // Update localStorage
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      // Update user state to refresh UI
+      setUser(res.data.user);
+      // Reset form password and update with new values
+      setProfileForm({
+        fullName: res.data.user.fullName,
+        email: res.data.user.email,
+        phone: res.data.user.phone,
+        address: res.data.user.address,
+        password: ''
+      });
+      setTimeout(() => setProfileMessage(''), 3000);
+    } catch (err) {
+      setProfileMessage(err.response?.data || 'Failed to update profile. Try again.');
     }
   };
 
@@ -289,74 +330,89 @@ const CustomerDashboard = () => {
 
       {/* Profile Modal Placeholder */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-purple-500/30 max-w-2xl w-full p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold text-white">Edit Profile</h2>
-              <button
-                onClick={() => setShowProfileModal(false)}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-slate-700/50">
+              <h2 className="text-xl font-bold mb-6 text-white">Edit Profile</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={profileForm.fullName}
+                    onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  />
+                </div>
 
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Full Name</label>
-                <input
-                  type="text"
-                  defaultValue={user?.fullName}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Email</label>
-                <input
-                  type="email"
-                  defaultValue={user?.email}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  defaultValue={user?.phone}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Address</label>
+                  <textarea
+                    value={profileForm.address}
+                    onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                    rows="3"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all resize-none"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Address</label>
-                <textarea
-                  defaultValue={user?.address}
-                  rows="3"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all resize-none"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">New Password (leave blank to keep current)</label>
+                  <input
+                    type="password"
+                    value={profileForm.password}
+                    onChange={(e) => setProfileForm({ ...profileForm, password: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  />
+                </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowProfileModal(false)}
-                  className="flex-1 px-6 py-3 bg-slate-800 border border-slate-700 text-white font-bold rounded-xl hover:bg-slate-700 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold rounded-xl hover:from-purple-400 hover:to-purple-500 transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
-                >
-                  Save Changes
-                </button>
+                {profileMessage && (
+                  <div className={`p-4 rounded-xl border ${
+                    profileMessage.includes('success') 
+                      ? 'bg-teal-500/10 border-teal-500/30 text-teal-400' 
+                      : 'bg-red-500/10 border-red-500/30 text-red-400'
+                  }`}>
+                    {profileMessage}
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowProfileModal(false)}
+                    className="flex-1 px-6 py-3 bg-slate-800 border border-slate-700 text-white font-bold rounded-xl hover:bg-slate-700 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateProfile}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold rounded-xl hover:from-purple-400 hover:to-purple-500 transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
