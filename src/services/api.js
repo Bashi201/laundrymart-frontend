@@ -23,6 +23,7 @@ export const getAdminOrders = () => API.get('/admin/orders');
 export const assignRider = (orderId, riderId) => API.put(`/admin/orders/${orderId}/assign-rider`, { riderId });
 export const assignEmployee = (orderId, employeeId) => API.put(`/admin/orders/${orderId}/assign-employee`, { employeeId });
 export const updateOrderStatus = (orderId, status) => API.put(`/admin/orders/${orderId}/status`, { status });
+export const deleteUser = (userId) => API.delete(`/admin/users/${userId}`);
 
 // Customer endpoints
 export const createOrder = (order) => API.post('/customer/orders', order);

@@ -68,7 +68,7 @@ const Login = () => {
             {/* Username Input */}
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-300">
-                Username or Email
+                Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

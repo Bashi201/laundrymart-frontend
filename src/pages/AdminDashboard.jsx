@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getUsers, register, updateProfile, getAdminOrders, assignRider, assignEmployee, updateOrderStatus } from '../services/api';
+import { getUsers, register, updateProfile, getAdminOrders, assignRider, assignEmployee, updateOrderStatus, deleteUser } from '../services/api';
 import { getUser } from '../utils/auth';
 
 const AdminDashboard = () => {
@@ -11,6 +11,8 @@ const AdminDashboard = () => {
   // Modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   
   // Form states
   const [newUser, setNewUser] = useState({
@@ -160,6 +162,28 @@ const AdminDashboard = () => {
       setTimeout(() => setProfileMessage(''), 3000);
     } catch (err) {
       setProfileMessage(err.response?.data || 'Failed to update profile. Try again.');
+    }
+  };
+
+  const openDeleteConfirmation = (user) => {
+    setUserToDelete(user);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await deleteUser(userToDelete.id);
+      showToast(`User "${userToDelete.username}" deleted successfully!`, 'success');
+      setShowDeleteConfirm(false);
+      setUserToDelete(null);
+      await loadUsers(); // Reload the user list
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+      showToast(err.response?.data || 'Failed to delete user', 'error');
+      setShowDeleteConfirm(false);
+      setUserToDelete(null);
     }
   };
 
@@ -486,12 +510,13 @@ const AdminDashboard = () => {
                     <th className="px-6 py-4 text-left text-slate-400">Role</th>
                     <th className="px-6 py-4 text-left text-slate-400">Email</th>
                     <th className="px-6 py-4 text-left text-slate-400">Phone</th>
+                    <th className="px-6 py-4 text-left text-slate-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.filter(u => u.role !== 'ADMIN').length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center">
+                      <td colSpan="5" className="px-6 py-12 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
                             <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -521,6 +546,17 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-6 py-4 text-slate-300">{user.email}</td>
                         <td className="px-6 py-4 text-slate-300">{user.phone || 'N/A'}</td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => openDeleteConfirmation(user)}
+                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all group"
+                            title="Delete user"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -956,6 +992,46 @@ const AdminDashboard = () => {
                   Add User
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl border border-red-500/30 max-w-md w-full p-8 shadow-2xl">
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-white text-center mb-4">Delete User?</h2>
+            
+            <p className="text-slate-300 text-center mb-6">
+              Are you sure you want to delete user <span className="font-semibold text-white">"{userToDelete.username}"</span>? 
+              This action cannot be undone.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setUserToDelete(null);
+                }}
+                className="flex-1 px-6 py-3 bg-slate-800 border border-slate-700 text-white font-bold rounded-xl hover:bg-slate-700 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl hover:from-red-400 hover:to-red-500 transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/50"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
