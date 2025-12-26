@@ -137,7 +137,7 @@ export default function Home() {
                     <div className="text-center mb-20">
                         <span className="text-teal-400 font-bold text-sm uppercase tracking-wider mb-4 block">Why Choose Us</span>
                         <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6">
-                            Premium Service, <span className="bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">Affordable Prices</span>
+                            උසස් සේවාවක්, <span className="bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">පහසු මිලකට</span>
                         </h2>
                         <p className="text-lg text-slate-400 max-w-2xl mx-auto">
                             Experience the difference of professional laundry care with convenience at its core
@@ -298,14 +298,14 @@ export default function Home() {
                                 ))}
                             </div>
                             <p className="text-slate-300 mb-6 leading-relaxed">
-                                "Absolutely game-changing! I save so much time every week. The quality is outstanding and the team is always professional."
+                                "මේ ආයතනය හරිම ගුණාත්මක සේවාවක් සපයනවා. මගේ සතියේ රෙදි සෝදන්න යන වෙලාව සම්පූර්ණයෙන්ම ඉතුරු කරගන්න පුළුවන් උනා"
                             </p>
                             <div className="flex items-center">
                                 <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                                     SM
                                 </div>
                                 <div className="ml-4">
-                                    <div className="text-white font-bold">Sarah Mitchell</div>
+                                    <div className="text-white font-bold">කාවින්දි කුමාරි</div>
                                     <div className="text-slate-400 text-sm">Marketing Manager</div>
                                 </div>
                             </div>
@@ -344,14 +344,14 @@ export default function Home() {
                                 ))}
                             </div>
                             <p className="text-slate-300 mb-6 leading-relaxed">
-                                "My clothes have never looked better! The eco-friendly detergents make me feel good about using this service regularly."
+                                "මම මීට කලින් ගණුදෙනු කරපු කිසිම ආයතනයක් මේ තරම් හොඳ සේවාවක් මට දීලා නෑ. පාවිච්චි කරන ඩිටර්ජන්ට් පරිසර හිතකාමී නිසා බය නැතුව කාලයක් උනත් සේවාව ලබාගන්න පුළුවන්"
                             </p>
                             <div className="flex items-center">
                                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                                     EW
                                 </div>
                                 <div className="ml-4">
-                                    <div className="text-white font-bold">Emma Watson</div>
+                                    <div className="text-white font-bold">කාව්‍යා සෝමලතා</div>
                                     <div className="text-slate-400 text-sm">Teacher</div>
                                 </div>
                             </div>
@@ -381,7 +381,7 @@ export default function Home() {
                         to="/register"
                         className="inline-flex items-center gap-3 px-12 py-6 bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-xl font-bold rounded-2xl hover:from-teal-400 hover:to-cyan-400 transition-all duration-300 shadow-2xl shadow-teal-500/40 hover:shadow-teal-500/60 hover:scale-105 group"
                     >
-                        Start Your First Order
+                        ඔබේ පළමු ඇණවුමට
                         <svg className="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
