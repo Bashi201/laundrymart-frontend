@@ -1,6 +1,10 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
+import Services from './pages/Services';
+import Pricing from './pages/Pricing';
+import About from './pages/About';
+import Contact from './pages/Contact.jsx';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Layout from './components/Layout';
@@ -22,14 +26,14 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         
-        {/* Placeholder routes for Home page links */}
-        <Route path="/services" element={<Home />} />
-        <Route path="/pricing" element={<Home />} />
-        <Route path="/about" element={<Home />} />
-        <Route path="/contact" element={<Home />} />
+        {/* Placeholder routes */}
         <Route path="/privacy" element={<Home />} />
         <Route path="/terms" element={<Home />} />
         <Route path="/forgot-password" element={<Login />} />
