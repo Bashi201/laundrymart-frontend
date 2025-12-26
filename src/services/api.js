@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-const API = axios.create({ baseURL: 'http://localhost:8080' });
+const API = axios.create({ baseURL: 'https://laundrymart-backend-production.up.railway.app' });
 
 // Automatically add JWT token to every request
 API.interceptors.request.use((req) => {
