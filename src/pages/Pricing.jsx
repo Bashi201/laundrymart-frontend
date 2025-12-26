@@ -10,7 +10,7 @@ export default function Pricing() {
         {
             name: "Starter",
             description: "Perfect for individuals",
-            monthlyPrice: 29,
+            monthlyPrice: 8700,
             yearlyPrice: 290,
             features: [
                 "Up to 20 lbs per month",
@@ -27,7 +27,7 @@ export default function Pricing() {
         {
             name: "Professional",
             description: "Most popular choice",
-            monthlyPrice: 59,
+            monthlyPrice: 17700,
             yearlyPrice: 590,
             features: [
                 "Up to 50 lbs per month",
@@ -46,7 +46,7 @@ export default function Pricing() {
         {
             name: "Business",
             description: "For busy professionals",
-            monthlyPrice: 99,
+            monthlyPrice: 29700,
             yearlyPrice: 990,
             features: [
                 "Unlimited laundry",
@@ -66,12 +66,12 @@ export default function Pricing() {
     ];
 
     const additionalServices = [
-        { name: "Express Service (24h)", price: "$10" },
-        { name: "Dry Cleaning (per item)", price: "$5.99" },
-        { name: "Ironing (per item)", price: "$2.99" },
-        { name: "Shoe Cleaning (per pair)", price: "$15" },
-        { name: "Alterations", price: "From $10" },
-        { name: "Stain Treatment", price: "$5" }
+        { name: "Express Service (24h)", price: "Rs. 3,500" },
+        { name: "Dry Cleaning (per item)", price: "Rs. 2,100" },
+        { name: "Ironing (per item)", price: "Rs. 700" },
+        { name: "Shoe Cleaning (per pair)", price: "Rs. 500" },
+        { name: "Alterations", price: "From Rs. 3,500" },
+        { name: "Stain Treatment", price: "Rs. 1,800" }
     ];
 
     return (
@@ -165,7 +165,7 @@ export default function Pricing() {
                                         
                                         <div className="flex items-end justify-center gap-2">
                                             <span className="text-5xl font-black bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                                                ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
+                                                Rs. {(billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice).toLocaleString()}
                                             </span>
                                             <span className="text-slate-400 text-lg mb-2">
                                                 /{billingCycle === 'monthly' ? 'mo' : 'yr'}
@@ -174,10 +174,11 @@ export default function Pricing() {
                                         
                                         {billingCycle === 'yearly' && (
                                             <p className="text-teal-400 text-sm mt-2">
-                                                ${(plan.yearlyPrice / 12).toFixed(2)}/month
+                                                Rs. {(plan.yearlyPrice / 12).toLocaleString()}/month
                                             </p>
                                         )}
                                     </div>
+
 
                                     {/* Features List */}
                                     <ul className="space-y-4 mb-8">
@@ -238,7 +239,7 @@ export default function Pricing() {
 
                         <div className="mt-12 text-center">
                             <p className="text-slate-400 mb-6">
-                                Standard wash & fold: <span className="text-teal-400 font-bold">$1.50/lb</span> (minimum 10 lbs)
+                                Standard wash & fold: <span className="text-teal-400 font-bold">Rs. 525/1kg</span> (minimum 10 kgs)
                             </p>
                             <Link
                                 to="/register"

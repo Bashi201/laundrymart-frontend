@@ -28,44 +28,46 @@ export default function Contact() {
         setTimeout(() => setSubmitted(false), 3000);
     };
 
+    const getContactIcon = (type) => {
+        const icons = {
+            phone: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>,
+            email: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>,
+            location: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>,
+            hours: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        };
+        return icons[type];
+    };
+
     const contactInfo = [
         {
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-            ),
+            type: "phone",
             title: "Phone",
-            details: ["+1 (555) 123-4567", "Mon-Fri: 8AM-8PM"],
+            details: ["+94 11 234 5678", "Mon-Fri: 8AM-8PM"],
             gradient: "from-teal-500 to-cyan-500"
         },
         {
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-            ),
+            type: "email",
             title: "Email",
-            details: ["support@laundrymart.com", "24/7 Support"],
+            details: ["support@laundrymart.lk", "24/7 Support"],
             gradient: "from-cyan-500 to-blue-500"
         },
         {
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-            ),
+            type: "location",
             title: "Location",
-            details: ["123 Main Street", "New York, NY 10001"],
+            details: ["123 Galle Road", "Colombo 03, Sri Lanka"],
             gradient: "from-purple-500 to-pink-500"
         },
         {
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            ),
+            type: "hours",
             title: "Business Hours",
             details: ["Mon-Fri: 7AM-9PM", "Sat-Sun: 8AM-8PM"],
             gradient: "from-green-500 to-emerald-500"
@@ -138,7 +140,7 @@ export default function Contact() {
                                 className="bg-gradient-to-br from-slate-900/80 to-slate-800/80 p-6 rounded-2xl border border-slate-700/50 hover:border-teal-500/30 transition-all backdrop-blur-sm text-center"
                             >
                                 <div className={`w-14 h-14 bg-gradient-to-br ${info.gradient} rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-                                    <div className="text-white">{info.icon}</div>
+                                    <div className="text-white">{getContactIcon(info.type)}</div>
                                 </div>
                                 <h3 className="text-lg font-bold text-white mb-2">{info.title}</h3>
                                 {info.details.map((detail, idx) => (
@@ -205,7 +207,7 @@ export default function Contact() {
                                             value={formData.phone}
                                             onChange={handleChange}
                                             className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-colors"
-                                            placeholder="+1 (555) 000-0000"
+                                            placeholder="+94 71 234 5678"
                                         />
                                     </div>
                                 </div>
@@ -279,8 +281,8 @@ export default function Contact() {
                                         </svg>
                                     </div>
                                     <p className="text-slate-400 text-lg">
-                                        123 Main Street<br />
-                                        New York, NY 10001
+                                        123 Galle Road<br />
+                                        Colombo 03, Sri Lanka
                                     </p>
                                 </div>
                             </div>
