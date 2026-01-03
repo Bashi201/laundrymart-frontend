@@ -305,7 +305,7 @@ export default function Home() {
                                     SM
                                 </div>
                                 <div className="ml-4">
-                                    <div className="text-white font-bold">කාවින්දි කුමාරි</div>
+                                    <div className="text-white font-bold">කුමාරි සේනානායක</div>
                                     <div className="text-slate-400 text-sm">Marketing Manager</div>
                                 </div>
                             </div>
@@ -351,7 +351,7 @@ export default function Home() {
                                     EW
                                 </div>
                                 <div className="ml-4">
-                                    <div className="text-white font-bold">කාව්‍යා සෝමලතා</div>
+                                    <div className="text-white font-bold">සෝමලතා ගුණවර්ධන</div>
                                     <div className="text-slate-400 text-sm">Teacher</div>
                                 </div>
                             </div>
