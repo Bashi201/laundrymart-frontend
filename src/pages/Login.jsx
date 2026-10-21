@@ -25,7 +25,7 @@ const Login = () => {
       // Redirect to home for all roles
       navigate('/');
       
-    } catch (err) {
+    } catch {
       setError('Invalid username or password');
     } finally {
       setLoading(false);

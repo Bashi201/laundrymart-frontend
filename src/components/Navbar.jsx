@@ -19,10 +19,12 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
+  // Reset the menu before rendering a different route.
+  const [previousLocation, setPreviousLocation] = useState(location);
+  if (previousLocation !== location) {
+    setPreviousLocation(location);
     setMobileMenuOpen(false);
-  }, [location]);
+  }
 
   const handleLogout = () => {
     logout();

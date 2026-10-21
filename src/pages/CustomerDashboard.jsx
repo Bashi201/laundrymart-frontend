@@ -22,10 +22,6 @@ const CustomerDashboard = () => {
 
   const [profileMessage, setProfileMessage] = useState('');
 
-  useEffect(() => {
-    loadOrders(); // Added: fetch real orders on load
-  }, []);
-
   // Added: function to load orders
   const loadOrders = async () => {
     try {
@@ -35,6 +31,14 @@ const CustomerDashboard = () => {
       console.error('Failed to load orders:', err);
     }
   };
+
+  useEffect(() => {
+    let active = true;
+    getMyOrders().then(res => {
+      if (active) setOrders(res.data);
+    }).catch(err => console.error('Failed to load orders:', err));
+    return () => { active = false; };
+  }, []);
 
   const handlePlaceOrder = async () => {
     if (!orderDetails.trim()) {
@@ -48,7 +52,7 @@ const CustomerDashboard = () => {
       setOrderDetails('');
       setShowNewOrderModal(false);
       loadOrders(); // Added: refresh orders after placing new one
-    } catch (err) {
+    } catch {
       setMessage('Failed to place order. Try again.');
     }
   };

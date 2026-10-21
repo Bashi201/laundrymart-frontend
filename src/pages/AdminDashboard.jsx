@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getUsers, register, updateProfile, getAdminOrders, assignRider, assignEmployee, updateOrderStatus, deleteUser } from '../services/api';
 import { getUser } from '../utils/auth';
 
@@ -6,11 +6,9 @@ const AdminDashboard = () => {
   const [admin, setAdmin] = useState(getUser());
   const [activeTab, setActiveTab] = useState('overview');
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   
   // Modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   
@@ -66,14 +64,7 @@ const AdminDashboard = () => {
     setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
   };
 
-  useEffect(() => {
-    loadUsers();
-    loadOrders();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      const res = await getUsers();
+  const applyUsers = useCallback((res) => {
       setUsers(res.data);
       
       const employees = res.data.filter(u => u.role === 'EMPLOYEE').length;
@@ -84,16 +75,9 @@ const AdminDashboard = () => {
         employees,
         riders
       }));
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed to load users:', err);
-      setLoading(false);
-    }
-  };
+  }, []);
 
-  const loadOrders = async () => {
-    try {
-      const res = await getAdminOrders();
+  const applyOrders = useCallback((res) => {
       setOrders(res.data);
       
       // Calculate revenue from actual orders
@@ -105,10 +89,26 @@ const AdminDashboard = () => {
         activeOrders: res.data.filter(o => o.status !== 'COMPLETED' && o.status !== 'DELIVERED').length,
         revenue: totalRevenue
       }));
-    } catch (err) {
-      console.error('Failed to load orders:', err);
-    }
-  };
+  }, []);
+
+  const loadUsers = () => getUsers().then(applyUsers).catch(err => {
+    console.error('Failed to load users:', err);
+  });
+
+  const loadOrders = () => getAdminOrders().then(applyOrders).catch(err => {
+    console.error('Failed to load orders:', err);
+  });
+
+  useEffect(() => {
+    let active = true;
+    getUsers().then(res => {
+      if (active) applyUsers(res);
+    }).catch(err => console.error('Failed to load users:', err));
+    getAdminOrders().then(res => {
+      if (active) applyOrders(res);
+    }).catch(err => console.error('Failed to load orders:', err));
+    return () => { active = false; };
+  }, [applyUsers, applyOrders]);
 
   const handleAddUser = async () => {
     if (!newUser.username || !newUser.password || !newUser.email) {
